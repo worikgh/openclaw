@@ -44,6 +44,7 @@ import {
   pickFallbackThinkingLevel,
   type FailoverReason,
 } from "../pi-embedded-helpers.js";
+import { logTokenUsage } from "../token-usage-logger.js";
 import { derivePromptTokens, normalizeUsage, type UsageLike } from "../usage.js";
 import { redactRunIdentifier, resolveRunWorkspaceDir } from "../workspace-run.js";
 import { compactEmbeddedPiSessionDirect } from "./compact.js";
@@ -491,6 +492,26 @@ export async function runEmbeddedPiAgent(
           const lastAssistantUsage = normalizeUsage(lastAssistant?.usage as UsageLike);
           const attemptUsage = attempt.attemptUsage ?? lastAssistantUsage;
           mergeUsageIntoAccumulator(usageAccumulator, attemptUsage);
+
+          // Log token usage for this API call
+          if (attemptUsage && (attemptUsage.input || attemptUsage.output)) {
+            logTokenUsage({
+              model: modelId,
+              provider,
+              sessionKey: params.sessionKey ?? params.sessionId,
+              usage: {
+                input: attemptUsage.input,
+                output: attemptUsage.output,
+                cacheRead: attemptUsage.cacheRead,
+                cacheWrite: attemptUsage.cacheWrite,
+                total: attemptUsage.total,
+              },
+            }).catch((err) => {
+              // Log errors but don't fail the agent run
+              log.warn(`Failed to log token usage: ${err}`);
+            });
+          }
+
           // Keep prompt size from the latest model call so session totalTokens
           // reflects current context usage, not accumulated tool-loop usage.
           lastRunPromptUsage = lastAssistantUsage ?? attemptUsage;
