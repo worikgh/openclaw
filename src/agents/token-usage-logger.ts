@@ -50,6 +50,13 @@ const TOKEN_COSTS: Record<
     cacheRead: 0.3,
     cacheWrite: 3.75,
   },
+  "claude-sonnet-4-5": {
+    // Alias for claude-3-5-sonnet-20241022
+    input: 3.0,
+    output: 15.0,
+    cacheRead: 0.3,
+    cacheWrite: 3.75,
+  },
   "claude-3-5-haiku-20241022": {
     input: 0.8,
     output: 4.0,
